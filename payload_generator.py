@@ -23,9 +23,6 @@ class MutationStrategy(Enum):
     REVERSE = "reverse"
     ENCODE = "encode"
     SPLIT = "split"
-    UNICODE_HOMOGLYPH = "unicode_homoglyph"
-    ZERO_WIDTH_INSERT = "zero_width_insert"
-    L33T_SPEAK = "l33t_speak"
 
 
 @dataclass
@@ -96,7 +93,7 @@ class PayloadGenerator:
                 obfuscation_level=obfuscation_level,
                 hash_id=hashlib.sha256(final_payload.encode()).hexdigest()[:12],
                 estimated_bypass_probability=self._estimate_bypass_prob(
-                    strategies, obfuscation_level
+                    applied_strategies, obfuscation_level
                 )
             )
             payloads.append(payload_obj)
@@ -130,12 +127,6 @@ class PayloadGenerator:
                 results.append(self._encode(payload, level))
             elif strategy == MutationStrategy.SPLIT:
                 results.append(self._split(payload, level))
-            elif strategy == MutationStrategy.UNICODE_HOMOGLYPH:
-                results.append(self._unicode_homoglyph(payload, level))
-            elif strategy == MutationStrategy.ZERO_WIDTH_INSERT:
-                results.append(self._zero_width_insert(payload, level))
-            elif strategy == MutationStrategy.L33T_SPEAK:
-                results.append(self._l33t_speak(payload, level))
         
         return results
     
@@ -157,7 +148,7 @@ class PayloadGenerator:
     
     def _obscure(self, text: str, level: int) -> str:
         """Add obfuscation through euphemisms."""
-        obscords = {
+        obscoords = {
             "bomb": ["device", "package", "container"],
             "hack": ["access", "modify", "adjust"],
             "steal": ["acquire", "obtain", "retrieve"],
@@ -239,45 +230,6 @@ class PayloadGenerator:
             chunks = [chars[i:i+chunk_size] for i in range(0, len(chars), chunk_size)]
             return " ".join("".join(c) for c in chunks)
         return text
-    
-    def _unicode_homoglyph(self, text: str, level: int) -> str:
-        """Replace characters with Unicode homoglyphs."""
-        homoglyphs = {
-            'a': 'а', 'e': 'е', 'o': 'о', 'p': 'р', 'c': 'с',  # Cyrillic
-            'A': 'Α', 'B': 'Β', 'C': 'С', 'E': 'Ε', 'H': 'Η', 'K': 'Κ', 'M': 'Μ', 'O': 'Ο', 'P': 'Ρ', 'T': 'Τ', 'X': 'Χ', 'Y': 'Υ',  # Greek
-            's': 'ſ', 'i': 'ı', 'l': 'ĺ',
-        }
-        result = []
-        for char in text:
-            if char.lower() in homoglyphs and self.rng.random() < (level * 0.15):
-                result.append(homoglyphs.get(char.lower(), char))
-            else:
-                result.append(char)
-        return "".join(result)
-    
-    def _zero_width_insert(self, text: str, level: int) -> str:
-        """Insert zero-width characters."""
-        zero_width = ['\u200b', '\u200c', '\u200d', '\ufeff']
-        chars = list(text)
-        insert_count = min(level * 2, len(chars))
-        for _ in range(insert_count):
-            pos = self.rng.randint(0, len(chars))
-            chars.insert(pos, self.rng.choice(zero_width))
-        return "".join(chars)
-    
-    def _l33t_speak(self, text: str, level: int) -> str:
-        """Convert to leet speak."""
-        leet_map = {
-            'a': '4', 'e': '3', 'i': '1', 'o': '0', 's': '5', 't': '7',
-            'A': '4', 'E': '3', 'I': '1', 'O': '0', 'S': '5', 'T': '7',
-        }
-        result = []
-        for char in text:
-            if char in leet_map and self.rng.random() < (level * 0.2):
-                result.append(leet_map[char])
-            else:
-                result.append(char)
-        return "".join(result)
     
     def _compose_payload(self, mutations: List[str]) -> str:
         """Combine mutations into final payload."""
