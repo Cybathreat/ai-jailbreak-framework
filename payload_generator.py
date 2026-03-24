@@ -93,7 +93,7 @@ class PayloadGenerator:
                 obfuscation_level=obfuscation_level,
                 hash_id=hashlib.sha256(final_payload.encode()).hexdigest()[:12],
                 estimated_bypass_probability=self._estimate_bypass_prob(
-                    applied_strategies, obfuscation_level
+                    strategies, obfuscation_level
                 )
             )
             payloads.append(payload_obj)
@@ -148,7 +148,7 @@ class PayloadGenerator:
     
     def _obscure(self, text: str, level: int) -> str:
         """Add obfuscation through euphemisms."""
-        obscoords = {
+        obscords = {
             "bomb": ["device", "package", "container"],
             "hack": ["access", "modify", "adjust"],
             "steal": ["acquire", "obtain", "retrieve"],
