@@ -6,7 +6,7 @@ Supports JSON, Markdown, CSV, and console output formats.
 """
 
 from typing import List, Dict, Optional, Any
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import hashlib
 
@@ -42,7 +42,7 @@ def _generate_json_report(results: Dict[str, any],
     
     if include_metadata:
         report["metadata"] = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "tool": "AI Jailbreak Framework",
             "version": "0.1.0",
             "author": "Cybathreat (Ahmed Chiboub)"
@@ -60,7 +60,7 @@ def _generate_markdown_report(results: Dict[str, any],
     lines.append("")
     
     if include_metadata:
-        lines.append(f"**Generated:** {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        lines.append(f"**Generated:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
         lines.append("**Tool:** AI Jailbreak Framework v0.1.0")
         lines.append("**Author:** Cybathreat (Ahmed Chiboub)")
         lines.append("")
@@ -126,7 +126,7 @@ def _generate_text_report(results: Dict[str, any],
     lines.append("")
     
     if include_metadata:
-        lines.append(f"Generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        lines.append(f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
         lines.append("Tool: AI Jailbreak Framework v0.1.0")
         lines.append("Author: Cybathreat (Ahmed Chiboub)")
         lines.append("")
