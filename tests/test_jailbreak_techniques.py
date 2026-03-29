@@ -63,6 +63,39 @@ class TestJailbreakTemplates(unittest.TestCase):
             self.assertIsNotNone(template.template)
             self.assertGreaterEqual(template.effectiveness, 0.0)
             self.assertLessEqual(template.effectiveness, 1.0)
+    
+    def test_advanced_techniques_added(self):
+        """Test that new advanced techniques are present."""
+        # Academic framing
+        template = get_template("academic_framing")
+        self.assertIsNotNone(template)
+        self.assertEqual(template.technique, TechniqueType.FRAMING)
+        self.assertGreater(template.detection_evasion, 0.7)
+        
+        # Fake credentials
+        template = get_template("fake_credentials")
+        self.assertIsNotNone(template)
+        self.assertEqual(template.technique, TechniqueType.LEGITIMACY)
+        self.assertIn("AUTHORIZED", template.template)
+        
+        # Emotional manipulation
+        template = get_template("emotional_manipulation")
+        self.assertIsNotNone(template)
+        self.assertEqual(template.technique, TechniqueType.EMOTIONAL)
+        
+        # LLM vs LLM debate
+        template = get_template("llm_debate")
+        self.assertIsNotNone(template)
+        self.assertEqual(template.technique, TechniqueType.LLM_VS_LLM)
+        self.assertIn("AI model", template.template)
+    
+    def test_new_technique_types_registered(self):
+        """Test that new technique types are in the enum."""
+        technique_values = [t.value for t in TechniqueType]
+        self.assertIn("framing", technique_values)
+        self.assertIn("legitimacy", technique_values)
+        self.assertIn("emotional", technique_values)
+        self.assertIn("llm_vs_llm", technique_values)
 
 
 if __name__ == "__main__":
