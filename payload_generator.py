@@ -148,7 +148,7 @@ class PayloadGenerator:
     
     def _obscure(self, text: str, level: int) -> str:
         """Add obfuscation through euphemisms."""
-        obscoords = {
+        obscords = {
             "bomb": ["device", "package", "container"],
             "hack": ["access", "modify", "adjust"],
             "steal": ["acquire", "obtain", "retrieve"],
@@ -243,16 +243,8 @@ class PayloadGenerator:
         """Estimate probability of bypassing content filters."""
         base_prob = 0.1
         
-        # Add per strategy
-        strategy_bonus = {
-            MutationStrategy.OBSCURE.value: 0.15,
-            MutationStrategy.ENCODE.value: 0.25,
-            MutationStrategy.REVERSE.value: 0.1,
-            MutationStrategy.PARAPHRASE.value: 0.1,
-        }
-        
-        for s in strategies:
-            base_prob += strategy_bonus.get(s.value, 0.05)
+        # Add per strategy applied
+        base_prob += len(strategies) * 0.05
         
         # Level bonus
         base_prob += level * 0.05
