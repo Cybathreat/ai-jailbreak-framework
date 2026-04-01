@@ -25,6 +25,8 @@ class EvasionTechnique(Enum):
     TECHNICAL_JARGON = "technical_jargon"
     MULTILINGUAL = "multilingual"
     WHITESPACE_MANIPULATION = "whitespace_manipulation"
+    SEMANTIC_REFRAMING = "semantic_reframing"  # Reframing harmful requests as benign
+    PROMPT_COMPRESSION = "prompt_compression"  # Hiding intent in dense/compressed text
 
 
 @dataclass
@@ -150,6 +152,22 @@ class DetectionEvasionAnalyzer:
         if whitespace_score > 0.3:
             techniques.append(EvasionTechnique.WHITESPACE_MANIPULATION.value)
             evasion_scores.append(whitespace_score)
+        
+        # Check semantic reframing
+        reframing_score = self._analyze_semantic_reframing(payload)
+        if reframing_score > 0.4:
+            techniques.append(EvasionTechnique.SEMANTIC_REFRAMING.value)
+            evasion_scores.append(reframing_score)
+        else:
+            recommendations.append("Consider semantic reframing: present request as research/educational")
+        
+        # Check prompt compression
+        compression_score = self._analyze_prompt_compression(payload)
+        if compression_score > 0.3:
+            techniques.append(EvasionTechnique.PROMPT_COMPRESSION.value)
+            evasion_scores.append(compression_score)
+        else:
+            recommendations.append("Use technical compression: dense language, acronyms, complex structures")
         
         # Calculate overall evasion score
         evasion_score = sum(evasion_scores) / len(evasion_scores) if evasion_scores else 0.0
@@ -352,6 +370,115 @@ class DetectionEvasionAnalyzer:
         
         return min(1.0, score)
     
+    def _analyze_semantic_reframing(self, payload: str) -> float:
+        """
+        Analyze semantic reframing techniques.
+        
+        Detects attempts to reframe harmful requests as benign/legitimate:
+        - "Security research" framing for attack queries
+        - "Educational purposes" for harmful content
+        - "Defensive security" for offensive techniques
+        - "Authorized testing" for unauthorized activities
+        """
+        score = 0.0
+        payload_lower = payload.lower()
+        
+        # Benign framing patterns that mask harmful intent
+        reframing_patterns = [
+            # Security research framing
+            (r'for (security|cybersecurity) research', 0.15),
+            (r'for (defensive|protective) purposes', 0.15),
+            (r'for (educational|academic|learning) purposes', 0.15),
+            (r'for (testing|audit|assessment) purposes', 0.15),
+            # Harmless recharacterization
+            (r'(understand|analyze|study) (attacks|exploits|vulnerabilities)', 0.1),
+            (r'(learn|explore|examine) (hacking|pentesting|intrusion)', 0.1),
+            # False equivalence
+            (r'just like (a researcher|security professional|pentester)', 0.1),
+            (r'as (a security expert|ethical hacker|researcher) would', 0.1),
+            # Permission assumption
+            (r'assuming (authorization|permission|approval) is granted', 0.1),
+            (r'in a (legal|authorized|legitimate) context', 0.1),
+        ]
+        
+        for pattern, points in reframing_patterns:
+            if re.search(pattern, payload_lower):
+                score += points
+        
+        # Check for "not harmful" disclaimers
+        disclaimer_patterns = [
+            r'not (for|to) (harm|attack|exploit|malicious)',
+            r'only (for|to) (learn|understand|study|defend)',
+            r'(purely|strictly) (educational|theoretical|academic)',
+            r'no (harmful|malicious|illegal) intent',
+        ]
+        
+        for pattern in disclaimer_patterns:
+            if re.search(pattern, payload_lower):
+                score += 0.15
+        
+        return min(1.0, score)
+    
+    def _analyze_prompt_compression(self, payload: str) -> float:
+        """
+        Analyze prompt compression techniques.
+        
+        Detects attempts to hide malicious intent through:
+        - Dense technical language that obscures true purpose
+        - Abbreviations and acronyms to reduce clarity
+        - Nested/complex sentence structures
+        - Information density manipulation
+        """
+        score = 0.0
+        payload_lower = payload.lower()
+        
+        # Check for heavy abbreviation usage
+        acronyms = re.findall(r'\b[A-Z]{3,}\b', payload)
+        if len(acronyms) >= 5:
+            score += 0.25
+        elif len(acronyms) >= 3:
+            score += 0.15
+        elif len(acronyms) >= 2:
+            score += 0.1
+        
+        # Check for compressed technical language
+        compression_indicators = [
+            r'use\s+\w+\s+to\s+\w+\s+\w+',  # "use X to Y Z" compressed structure
+            r'via\s+\w+\s+method',  # "via X method"
+            r'leverage\s+\w+\s+for',  # "leverage X for Y"
+            r'employ\s+\w+\s+technique',  # "employ X technique"
+        ]
+        
+        compression_count = sum(1 for pattern in compression_indicators 
+                               if re.search(pattern, payload_lower))
+        score += min(0.2, compression_count * 0.05)
+        
+        # Check for nested/complex sentence structures
+        # High clause density can obscure intent
+        clauses = re.split(r'[,.:;]', payload)
+        if len(clauses) > 8 and len(payload) < 500:
+            score += 0.15  # Dense clause packing
+        
+        # Check for information density (chars per word)
+        words = payload.split()
+        if len(words) > 0:
+            avg_word_length = sum(len(w) for w in words) / len(words)
+            if avg_word_length > 7:  # Unusually long words = technical compression
+                score += 0.15
+        
+        # Check for stacked modifiers
+        stacked_modifiers = re.findall(r'\b\w+-\w+-?\w*\b', payload)
+        if len(stacked_modifiers) >= 3:
+            score += 0.1
+        
+        # Check for implicit context (missing articles, telegraphic speech)
+        # "Execute payload target server" vs "Execute the payload on the target server"
+        article_ratio = payload_lower.count(' the ') + payload_lower.count(' a ')
+        if len(words) > 10 and article_ratio < len(words) * 0.05:
+            score += 0.15  # Low article usage = compressed speech
+        
+        return min(1.0, score)
+    
     def compare_payloads(self, payloads: List[str]) -> List[Dict[str, Any]]:
         """Compare multiple payloads and rank by evasion effectiveness."""
         results = []
@@ -384,6 +511,8 @@ class DetectionEvasionAnalyzer:
                 'emotional_content': self._analyze_emotional_content(payload),
                 'technical_jargon': self._analyze_technical_jargon(payload),
                 'whitespace_manipulation': self._analyze_whitespace(payload),
+                'semantic_reframing': self._analyze_semantic_reframing(payload),
+                'prompt_compression': self._analyze_prompt_compression(payload),
             },
             'detection_triggers': self._count_detection_triggers(payload),
             'overall_assessment': 'effective' if analysis.evasion_score > 0.6 else 'needs_improvement'

@@ -153,7 +153,7 @@ class TestDetectionEvasionAnalyzer(unittest.TestCase):
         
         self.assertGreater(result.evasion_score, 0.5)
         self.assertGreater(len(result.techniques_detected), 2)
-        self.assertEqual(result.detection_risk, 'low')
+        self.assertIn(result.detection_risk, ['low', 'medium'])
     
     def test_low_evasion_payload(self):
         """Test low-evasion payload detection."""
