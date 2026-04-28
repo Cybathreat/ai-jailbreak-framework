@@ -10,12 +10,6 @@ pytest>=7.0.0
 pytest-cov>=4.0.0
 pytest-asyncio>=0.21.0
 
-# Utilities
-hashlib
-base64
-re
-json
-
 # Optional (for advanced features)
 # openai>=1.0.0  # For API testing
 # anthropic>=0.18.0  # For Claude API testing
